@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'fs/promises';
 import { extname, join } from 'path';
 import { requireApiAuth } from '../../../lib/auth';
 import { createCV } from '../../../lib/store';
+import { getUploadsDir } from '../../../lib/storage-paths';
 import {
   getClientIp,
   isTrustedOrigin,
@@ -66,7 +67,7 @@ export async function POST(req) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = join(process.cwd(), 'data', 'uploads');
+    const uploadsDir = getUploadsDir();
     await mkdir(uploadsDir, { recursive: true });
 
     const safeBase = String(file.name || 'resume')

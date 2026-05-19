@@ -1,8 +1,9 @@
 import { randomUUID } from 'crypto';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { getDataDir } from './storage-paths';
 
-const dataDir = join(process.cwd(), 'data');
+const dataDir = getDataDir();
 const storePath = join(dataDir, 'store.json');
 
 async function readStore() {

@@ -3,6 +3,7 @@ import { unlink } from 'fs/promises';
 import { join, resolve } from 'path';
 import { requireApiAuth } from '../../../lib/auth';
 import { deleteCV, listCVs } from '../../../lib/store';
+import { getUploadsDir } from '../../../lib/storage-paths';
 import { getClientIp, isTrustedOrigin, originDeniedResponse, rateLimitResponse, takeRateLimit } from '../../../lib/request-security';
 
 export const dynamic = 'force-dynamic';
@@ -143,8 +144,8 @@ export async function DELETE(req) {
     }
 
     if (deleted.storageFileName) {
-      const privateFilePath = resolve(join(process.cwd(), 'data', 'uploads', deleted.storageFileName));
-      const privateUploadsDir = resolve(process.cwd(), 'data', 'uploads');
+      const privateUploadsDir = resolve(getUploadsDir());
+      const privateFilePath = resolve(join(privateUploadsDir, deleted.storageFileName));
       if (privateFilePath.startsWith(privateUploadsDir)) {
         await unlink(privateFilePath).catch(() => {});
       }

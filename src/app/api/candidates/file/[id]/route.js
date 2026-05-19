@@ -4,6 +4,7 @@ import { join, resolve } from 'path';
 import { requireApiAuth } from '../../../../../lib/auth';
 import { getCV } from '../../../../../lib/store';
 import { getClientIp, rateLimitResponse, takeRateLimit } from '../../../../../lib/request-security';
+import { getUploadsDir } from '../../../../../lib/storage-paths';
 
 function detectMimeFromName(fileName = '') {
   const lower = String(fileName).toLowerCase();
@@ -47,7 +48,7 @@ export async function GET(req, { params }) {
 
     let filePath = null;
     if (cv.storageFileName) {
-      const privateRoot = resolve(process.cwd(), 'data', 'uploads');
+      const privateRoot = resolve(getUploadsDir());
       const candidatePath = resolve(join(privateRoot, cv.storageFileName));
       if (candidatePath.startsWith(privateRoot)) {
         filePath = candidatePath;
