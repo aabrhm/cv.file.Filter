@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'CV Filter Free',
-  description: 'استخراج وفرز السير الذاتية مجانًا',
+  title: 'CV Filter',
+  description: 'استخراج وفرز السير الذاتية ',
 };
 
 export default function RootLayout({ children }) {
