@@ -96,7 +96,7 @@ export default function HomePageClient() {
       <section className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-6 py-12">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-blue-950">CV Filter Free</h1>
+            <h1 className="text-3xl font-bold text-blue-950"></h1>
             <p className="mt-2 text-gray-600">ارفع السيرة الذاتية، راجع البيانات المستخرجة، ثم فلتر المرشحين بسهولة.</p>
           </div>
           <div className="flex items-center gap-2">
