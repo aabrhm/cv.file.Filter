@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { mkdir, writeFile } from 'fs/promises';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { requireApiAuth } from '../../../lib/auth';
 import { createCV } from '../../../lib/store';
-import { getUploadsDir } from '../../../lib/storage-paths';
+import { saveFile } from '../../../lib/file-storage';
 import {
   getClientIp,
   isTrustedOrigin,
@@ -67,9 +66,6 @@ export async function POST(req) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = getUploadsDir();
-    await mkdir(uploadsDir, { recursive: true });
-
     const safeBase = String(file.name || 'resume')
       .replace(/\.[^.]+$/, '')
       .replace(/[^\w\-]+/g, '-')
@@ -77,7 +73,7 @@ export async function POST(req) {
       .slice(0, 60) || 'resume';
     const ext = normalizeExt(file.name, mimeType);
     const storageFileName = `${Date.now()}-${Math.random().toString(36).slice(2)}-${safeBase}${ext}`;
-    await writeFile(join(uploadsDir, storageFileName), buffer);
+    await saveFile(storageFileName, buffer, mimeType);
 
     const cv = await createCV({
       originalUrl: null,

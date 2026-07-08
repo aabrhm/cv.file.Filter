@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join, resolve } from 'path';
 import { requireApiAuth } from '../../../../../lib/auth';
 import { getCV } from '../../../../../lib/store';
 import { getClientIp, rateLimitResponse, takeRateLimit } from '../../../../../lib/request-security';
-import { getUploadsDir } from '../../../../../lib/storage-paths';
+import { readStoredFile } from '../../../../../lib/file-storage';
 
 function detectMimeFromName(fileName = '') {
   const lower = String(fileName).toLowerCase();
@@ -46,20 +44,11 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: 'Candidate not found' }, { status: 404 });
     }
 
-    let filePath = null;
-    if (cv.storageFileName) {
-      const privateRoot = resolve(getUploadsDir());
-      const candidatePath = resolve(join(privateRoot, cv.storageFileName));
-      if (candidatePath.startsWith(privateRoot)) {
-        filePath = candidatePath;
-      }
-    }
-
-    if (!filePath) {
+    if (!cv.storageFileName) {
       return NextResponse.json({ error: 'File path is invalid' }, { status: 400 });
     }
 
-    const buffer = await readFile(filePath);
+    const buffer = await readStoredFile(cv.storageFileName);
     const mimeType = cv.mimeType || detectMimeFromName(cv.fileName);
     const downloadName = sanitizeDownloadName(cv.fileName);
 

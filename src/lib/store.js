@@ -1,76 +1,79 @@
-import { randomUUID } from 'crypto';
-import { mkdir, readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
-import { getDataDir } from './storage-paths';
+import { getSupabaseAdmin } from './supabase';
 
-const dataDir = getDataDir();
-const storePath = join(dataDir, 'store.json');
-
-async function readStore() {
-  try {
-    const raw = await readFile(storePath, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return { cvs: [] };
-  }
-}
-
-async function writeStore(store) {
-  await mkdir(dataDir, { recursive: true });
-  await writeFile(storePath, JSON.stringify(store, null, 2), 'utf8');
+function mapRowToCV(row) {
+  return {
+    id: row.id,
+    originalUrl: row.original_url,
+    fileName: row.file_name,
+    storageFileName: row.storage_file_name,
+    mimeType: row.mime_type,
+    status: row.status,
+    extractedData: row.extracted_data,
+    rawText: row.raw_text,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export async function listCVs() {
-  const store = await readStore();
-  return [...store.cvs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('candidates')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(mapRowToCV);
 }
 
 export async function getCV(id) {
-  const store = await readStore();
-  return store.cvs.find((cv) => cv.id === id) || null;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from('candidates').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data ? mapRowToCV(data) : null;
 }
 
 export async function createCV({ originalUrl, fileName, storageFileName = null, mimeType = null }) {
-  const store = await readStore();
-  const now = new Date().toISOString();
-  const cv = {
-    id: randomUUID(),
-    originalUrl,
-    fileName,
-    storageFileName,
-    mimeType,
-    status: 'PENDING',
-    extractedData: null,
-    rawText: null,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  store.cvs.unshift(cv);
-  await writeStore(store);
-  return cv;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('candidates')
+    .insert({
+      original_url: originalUrl,
+      file_name: fileName,
+      storage_file_name: storageFileName,
+      mime_type: mimeType,
+      status: 'PENDING',
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return mapRowToCV(data);
 }
 
 export async function updateCV(id, data) {
-  const store = await readStore();
-  const index = store.cvs.findIndex((cv) => cv.id === id);
-  if (index === -1) return null;
-
-  store.cvs[index] = {
-    ...store.cvs[index],
-    ...data,
-    updatedAt: new Date().toISOString(),
+  const supabase = getSupabaseAdmin();
+  const payload = {
+    ...(data.originalUrl !== undefined ? { original_url: data.originalUrl } : {}),
+    ...(data.fileName !== undefined ? { file_name: data.fileName } : {}),
+    ...(data.storageFileName !== undefined ? { storage_file_name: data.storageFileName } : {}),
+    ...(data.mimeType !== undefined ? { mime_type: data.mimeType } : {}),
+    ...(data.status !== undefined ? { status: data.status } : {}),
+    ...(data.extractedData !== undefined ? { extracted_data: data.extractedData } : {}),
+    ...(data.rawText !== undefined ? { raw_text: data.rawText } : {}),
+    updated_at: new Date().toISOString(),
   };
-  await writeStore(store);
-  return store.cvs[index];
+  const { data: updated, error } = await supabase
+    .from('candidates')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  return updated ? mapRowToCV(updated) : null;
 }
 
 export async function deleteCV(id) {
-  const store = await readStore();
-  const index = store.cvs.findIndex((cv) => cv.id === id);
-  if (index === -1) return null;
-
-  const [deleted] = store.cvs.splice(index, 1);
-  await writeStore(store);
-  return deleted;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from('candidates').delete().eq('id', id).select('*').maybeSingle();
+  if (error) throw error;
+  return data ? mapRowToCV(data) : null;
 }
